@@ -8,9 +8,16 @@
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
         input, button { margin: 10px 0; }
         #output { margin-top: 20px; display: flex; flex-wrap: wrap; justify-content: space-between; }
-        .download-link { display: block; margin: 10px 0; padding: 10px; background-color: #4CAF50; color: white; text-decoration: none; text-align: center; width: calc(33% - 10px); box-sizing: border-box; }
+        .image-container { width: calc(33% - 10px); margin-bottom: 20px; }
+        .download-link, .preview-button, .rename-button { display: block; margin: 5px 0; padding: 10px; color: white; text-decoration: none; text-align: center; width: 100%; box-sizing: border-box; }
+        .download-link { background-color: #4CAF50; }
         .download-link.downloaded { background-color: #2196F3; }
+        .preview-button { background-color: #FFC107; }
+        .rename-button { background-color: #9C27B0; }
         #downloadAllButton { display: block; margin: 20px auto; padding: 10px 20px; background-color: #4CAF50; color: white; border: none; cursor: pointer; font-size: 16px; }
+        #preview-modal { display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.9); }
+        #preview-image { margin: auto; display: block; max-width: 90%; max-height: 90%; }
+        .close { color: #f1f1f1; font-size: 40px; font-weight: bold; position: absolute; right: 35px; top: 15px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -20,6 +27,11 @@
     <button onclick="convertImages()">转换</button>
     <button id="downloadAllButton" style="display: none;" onclick="downloadAll()">下载全部</button>
     <div id="output"></div>
+
+    <div id="preview-modal">
+        <span class="close">&times;</span>
+        <img id="preview-image">
+    </div>
 
     <script>
         let convertedImages = [];
@@ -56,6 +68,9 @@
                         
                         canvas.toBlob(function(blob) {
                             const url = URL.createObjectURL(blob);
+                            const container = document.createElement('div');
+                            container.className = 'image-container';
+
                             const link = document.createElement('a');
                             link.href = url;
                             link.download = fileName;
@@ -64,8 +79,27 @@
                             link.onclick = function() {
                                 this.classList.add('downloaded');
                             };
-                            output.appendChild(link);
-                            convertedImages.push({url: url, fileName: fileName});
+
+                            const previewButton = document.createElement('button');
+                            previewButton.textContent = '预览';
+                            previewButton.className = 'preview-button';
+                            previewButton.onclick = function() {
+                                previewImage(url);
+                            };
+
+                            const renameButton = document.createElement('button');
+                            renameButton.textContent = '重命名';
+                            renameButton.className = 'rename-button';
+                            renameButton.onclick = function() {
+                                renameImage(link, i);
+                            };
+
+                            container.appendChild(link);
+                            container.appendChild(previewButton);
+                            container.appendChild(renameButton);
+                            output.appendChild(container);
+
+                            convertedImages.push({url: url, fileName: fileName, link: link});
                         }, 'image/webp');
                     };
                     img.src = e.target.result;
@@ -88,6 +122,27 @@
             document.querySelectorAll('.download-link').forEach(link => {
                 link.classList.add('downloaded');
             });
+        }
+
+        function previewImage(url) {
+            const modal = document.getElementById('preview-modal');
+            const modalImg = document.getElementById('preview-image');
+            modal.style.display = "block";
+            modalImg.src = url;
+        }
+
+        function renameImage(link, index) {
+            const newName = prompt("请输入新的文件名", link.download);
+            if (newName && newName.trim() !== "") {
+                link.download = newName;
+                link.textContent = `下载 ${newName}`;
+                convertedImages[index].fileName = newName;
+            }
+        }
+
+        // 关闭预览模态框
+        document.querySelector('.close').onclick = function() {
+            document.getElementById('preview-modal').style.display = "none";
         }
     </script>
 </body>
