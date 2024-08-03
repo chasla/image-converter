@@ -14,14 +14,14 @@
 <body>
     <h1>图片批量转换为WebP</h1>
     <input type="file" id="fileInput" multiple accept="image/*">
-    <input type="text" id="baseNameInput" placeholder="输入基础文件名">
+    <input type="text" id="baseNameInput" placeholder="输入基础文件名（可选）">
     <button onclick="convertImages()">转换</button>
     <div id="output"></div>
 
     <script>
         function convertImages() {
             const files = document.getElementById('fileInput').files;
-            const baseName = document.getElementById('baseNameInput').value || 'image';
+            const baseName = document.getElementById('baseNameInput').value;
             const output = document.getElementById('output');
             output.innerHTML = '';
 
@@ -41,7 +41,13 @@
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0);
 
-                        const fileName = `${baseName}${(i + 1).toString().padStart(2, '0')}.webp`;
+                        let fileName;
+                        if (baseName) {
+                            fileName = `${baseName}${(i + 1).toString().padStart(2, '0')}.webp`;
+                        } else {
+                            // 使用原文件名（不包括扩展名）
+                            fileName = file.name.replace(/\.[^/.]+$/, "") + '.webp';
+                        }
                         
                         canvas.toBlob(function(blob) {
                             const url = URL.createObjectURL(blob);
