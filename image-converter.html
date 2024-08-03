@@ -24,7 +24,7 @@
             width: calc(33% - 10px);
             margin-bottom: 20px;
         }
-        .download-link, .button-container button {
+        .preview-link, .button-container button {
             display: block;
             margin: 5px 0;
             padding: 10px;
@@ -36,11 +36,8 @@
             border: none;
             cursor: pointer;
         }
-        .download-link {
+        .preview-link {
             background-color: #4CAF50;
-        }
-        .download-link.downloaded {
-            background-color: #2196F3;
         }
         .button-container {
             display: flex;
@@ -49,7 +46,7 @@
         .button-container button {
             width: calc(50% - 2px);
         }
-        .preview-button {
+        .download-button {
             background-color: #FFC107;
         }
         .rename-button {
@@ -149,7 +146,7 @@
                             const url = URL.createObjectURL(blob);
                             const container = createImageContainer(url, fileName, i);
                             output.appendChild(container);
-                            convertedImages.push({url: url, fileName: fileName, link: container.querySelector('.download-link')});
+                            convertedImages.push({url: url, fileName: fileName, link: container.querySelector('.preview-link')});
                         }, 'image/webp');
                     };
                     img.src = e.target.result;
@@ -166,22 +163,22 @@
             container.className = 'image-container';
 
             const link = document.createElement('a');
-            link.href = url;
-            link.download = fileName;
-            link.textContent = `下载 ${fileName}`;
-            link.className = 'download-link';
-            link.onclick = function() {
-                this.classList.add('downloaded');
+            link.href = '#';
+            link.textContent = fileName;
+            link.className = 'preview-link';
+            link.onclick = function(e) {
+                e.preventDefault();
+                previewImage(url);
             };
 
             const buttonContainer = document.createElement('div');
             buttonContainer.className = 'button-container';
 
-            const previewButton = document.createElement('button');
-            previewButton.textContent = '预览';
-            previewButton.className = 'preview-button';
-            previewButton.onclick = function() {
-                previewImage(url);
+            const downloadButton = document.createElement('button');
+            downloadButton.textContent = '下载';
+            downloadButton.className = 'download-button';
+            downloadButton.onclick = function() {
+                downloadImage(url, fileName);
             };
 
             const renameButton = document.createElement('button');
@@ -191,7 +188,7 @@
                 renameImage(link, index);
             };
 
-            buttonContainer.appendChild(previewButton);
+            buttonContainer.appendChild(downloadButton);
             buttonContainer.appendChild(renameButton);
 
             container.appendChild(link);
@@ -226,18 +223,9 @@
                 alert('所有文件已保存到选定文件夹');
             } else {
                 convertedImages.forEach(img => {
-                    const link = document.createElement('a');
-                    link.href = img.url;
-                    link.download = img.fileName;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
+                    downloadImage(img.url, img.fileName);
                 });
             }
-            
-            document.querySelectorAll('.download-link').forEach(link => {
-                link.classList.add('downloaded');
-            });
         }
 
         function previewImage(url) {
@@ -247,12 +235,21 @@
             modalImg.src = url;
         }
 
+        function downloadImage(url, fileName) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
         function renameImage(link, index) {
-            const newName = prompt("请输入新的文件名", link.download);
+            const newName = prompt("请输入新的文件名", link.textContent.replace('.webp', ''));
             if (newName && newName.trim() !== "") {
-                link.download = newName;
-                link.textContent = `下载 ${newName}`;
-                convertedImages[index].fileName = newName;
+                const newFileName = newName.trim() + '.webp';
+                link.textContent = newFileName;
+                convertedImages[index].fileName = newFileName;
             }
         }
 
