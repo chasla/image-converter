@@ -9,9 +9,11 @@
         input, button { margin: 10px 0; }
         #output { margin-top: 20px; display: flex; flex-wrap: wrap; justify-content: space-between; }
         .image-container { width: calc(33% - 10px); margin-bottom: 20px; }
-        .download-link, .preview-button, .rename-button { display: block; margin: 5px 0; padding: 10px; color: white; text-decoration: none; text-align: center; width: 100%; box-sizing: border-box; }
+        .download-link, .button-container button { display: block; margin: 5px 0; padding: 10px; color: white; text-decoration: none; text-align: center; width: 100%; box-sizing: border-box; border: none; cursor: pointer; }
         .download-link { background-color: #4CAF50; }
         .download-link.downloaded { background-color: #2196F3; }
+        .button-container { display: flex; justify-content: space-between; }
+        .button-container button { width: calc(50% - 2px); }
         .preview-button { background-color: #FFC107; }
         .rename-button { background-color: #9C27B0; }
         #downloadAllButton { display: block; margin: 20px auto; padding: 10px 20px; background-color: #4CAF50; color: white; border: none; cursor: pointer; font-size: 16px; }
@@ -80,6 +82,9 @@
                                 this.classList.add('downloaded');
                             };
 
+                            const buttonContainer = document.createElement('div');
+                            buttonContainer.className = 'button-container';
+
                             const previewButton = document.createElement('button');
                             previewButton.textContent = '预览';
                             previewButton.className = 'preview-button';
@@ -94,9 +99,11 @@
                                 renameImage(link, i);
                             };
 
+                            buttonContainer.appendChild(previewButton);
+                            buttonContainer.appendChild(renameButton);
+
                             container.appendChild(link);
-                            container.appendChild(previewButton);
-                            container.appendChild(renameButton);
+                            container.appendChild(buttonContainer);
                             output.appendChild(container);
 
                             convertedImages.push({url: url, fileName: fileName, link: link});
