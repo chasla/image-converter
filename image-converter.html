@@ -9,6 +9,8 @@
         input, button { margin: 10px 0; }
         #output { margin-top: 20px; display: flex; flex-wrap: wrap; justify-content: space-between; }
         .download-link { display: block; margin: 10px 0; padding: 10px; background-color: #4CAF50; color: white; text-decoration: none; text-align: center; width: calc(33% - 10px); box-sizing: border-box; }
+        .download-link.downloaded { background-color: #2196F3; }
+        #downloadAllButton { display: block; margin: 20px auto; padding: 10px 20px; background-color: #4CAF50; color: white; border: none; cursor: pointer; font-size: 16px; }
     </style>
 </head>
 <body>
@@ -16,14 +18,18 @@
     <input type="file" id="fileInput" multiple accept="image/*">
     <input type="text" id="baseNameInput" placeholder="输入基础文件名（可选）">
     <button onclick="convertImages()">转换</button>
+    <button id="downloadAllButton" style="display: none;" onclick="downloadAll()">下载全部</button>
     <div id="output"></div>
 
     <script>
+        let convertedImages = [];
+
         function convertImages() {
             const files = document.getElementById('fileInput').files;
             const baseName = document.getElementById('baseNameInput').value;
             const output = document.getElementById('output');
             output.innerHTML = '';
+            convertedImages = [];
 
             if (files.length > 30) {
                 alert('最多只能选择30张图片');
@@ -45,7 +51,6 @@
                         if (baseName) {
                             fileName = `${baseName}${(i + 1).toString().padStart(2, '0')}.webp`;
                         } else {
-                            // 使用原文件名（不包括扩展名）
                             fileName = file.name.replace(/\.[^/.]+$/, "") + '.webp';
                         }
                         
@@ -56,12 +61,32 @@
                             link.download = fileName;
                             link.textContent = `下载 ${fileName}`;
                             link.className = 'download-link';
+                            link.onclick = function() {
+                                this.classList.add('downloaded');
+                            };
                             output.appendChild(link);
+                            convertedImages.push({url: url, fileName: fileName});
                         }, 'image/webp');
                     };
                     img.src = e.target.result;
                 };
                 reader.readAsDataURL(file);
+            });
+
+            document.getElementById('downloadAllButton').style.display = 'block';
+        }
+
+        function downloadAll() {
+            convertedImages.forEach(img => {
+                const link = document.createElement('a');
+                link.href = img.url;
+                link.download = img.fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+            document.querySelectorAll('.download-link').forEach(link => {
+                link.classList.add('downloaded');
             });
         }
     </script>
