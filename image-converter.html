@@ -166,6 +166,7 @@
             cursor: pointer;
         }
         #dropZone {
+            position: relative;
             border: 2px dashed #3498db;
             border-radius: 5px;
             padding: 25px;
@@ -178,6 +179,21 @@
         #dropZone.dragover {
             background-color: #e8f4fc;
         }
+        #clearButton {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        #clearButton:hover {
+            background-color: #c0392b;
+        }
         #fileCount {
             margin-top: 10px;
             font-size: 14px;
@@ -189,6 +205,7 @@
     <h1>图片批量转换为WebP</h1>
     <div id="dropZone">
         拖拽图片文件到这里，或点击下方按钮选择文件
+        <button id="clearButton" style="display: none;">全部清空</button>
     </div>
     <div class="input-group">
         <div class="file-input-wrapper">
@@ -213,10 +230,12 @@
     <script>
         let convertedImages = [];
         let selectedFolder = null;
+        let selectedFiles = [];
 
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
         const fileCount = document.getElementById('fileCount');
+        const clearButton = document.getElementById('clearButton');
 
         // 拖拽功能
         dropZone.addEventListener('dragover', (e) => {
@@ -231,43 +250,54 @@
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
             dropZone.classList.remove('dragover');
-            handleFiles(e.dataTransfer.files);
+            const newFiles = Array.from(e.dataTransfer.files);
+            selectedFiles = selectedFiles.concat(newFiles);
+            updateFileList();
         });
 
         fileInput.addEventListener('change', (e) => {
-            handleFiles(e.target.files);
+            const newFiles = Array.from(e.target.files);
+            selectedFiles = selectedFiles.concat(newFiles);
+            updateFileList();
         });
 
-        function handleFiles(files) {
-            if (files.length > 0) {
-                let fileNames = Array.from(files).map(file => file.name);
+        clearButton.addEventListener('click', () => {
+            selectedFiles = [];
+            fileInput.value = '';
+            updateFileList();
+        });
+
+        function updateFileList() {
+            if (selectedFiles.length > 0) {
                 let displayText = '已选择文件：<br>';
-                if (fileNames.length <= 5) {
-                    displayText += fileNames.join('<br>');
-                } else {
-                    displayText += fileNames.slice(0, 5).join('<br>') + '<br>...';
+                const displayFiles = selectedFiles.slice(0, 5);
+                displayText += displayFiles.map(file => file.name).join('<br>');
+                if (selectedFiles.length > 5) {
+                    displayText += '<br>...';
                 }
                 dropZone.innerHTML = displayText;
-                fileCount.textContent = `已选择 ${files.length} 个文件`;
+                fileCount.textContent = `已选择 ${selectedFiles.length} 个文件`;
+                clearButton.style.display = 'block';
+                dropZone.appendChild(clearButton);
             } else {
-                dropZone.textContent = '拖拽图片文件到这里，或点击下方按钮选择文件';
+                dropZone.innerHTML = '拖拽图片文件到这里，或点击下方按钮选择文件';
                 fileCount.textContent = '';
+                clearButton.style.display = 'none';
             }
         }
 
         function convertImages() {
-            const files = document.getElementById('fileInput').files;
             const baseName = document.getElementById('baseNameInput').value;
             const output = document.getElementById('output');
             output.innerHTML = '';
             convertedImages = [];
 
-            if (files.length > 100) {
+            if (selectedFiles.length > 100) {
                 alert('最多只能选择100张图片');
                 return;
             }
 
-            Array.from(files).forEach((file, i) => {
+            selectedFiles.forEach((file, i) => {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const img = new Image();
