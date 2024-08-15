@@ -23,12 +23,14 @@
             flex-direction: column;
             align-items: center;
         }
-        input, button {
+        input, button, .file-input-wrapper {
             margin: 10px 0;
             padding: 12px 20px;
             font-size: 16px;
             border: none;
             border-radius: 5px;
+            width: 300px;
+            box-sizing: border-box;
         }
         input[type="file"] {
             width: 0.1px;
@@ -38,19 +40,28 @@
             position: absolute;
             z-index: -1;
         }
-        label[for="fileInput"], #convertButton {
+        .file-input-wrapper {
             background-color: #3498db;
             color: white;
             cursor: pointer;
             transition: background-color 0.3s;
             text-align: center;
-            width: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 45px;
         }
-        label[for="fileInput"]:hover, #convertButton:hover {
+        .file-input-wrapper:hover, #convertButton:hover {
             background-color: #2980b9;
         }
+        #convertButton {
+            background-color: #3498db;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            height: 45px;
+        }
         #baseNameInput {
-            width: 300px;
             border: 1px solid #bdc3c7;
         }
         #output {
@@ -154,13 +165,37 @@
             top: 15px;
             cursor: pointer;
         }
+        #dropZone {
+            border: 2px dashed #3498db;
+            border-radius: 5px;
+            padding: 25px;
+            text-align: center;
+            color: #3498db;
+            font-size: 18px;
+            margin-bottom: 20px;
+            transition: background-color 0.3s;
+        }
+        #dropZone.dragover {
+            background-color: #e8f4fc;
+        }
+        #fileCount {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
     </style>
 </head>
 <body>
     <h1>图片批量转换为WebP</h1>
+    <div id="dropZone">
+        拖拽图片文件到这里，或点击下方按钮选择文件
+    </div>
     <div class="input-group">
-        <label for="fileInput">选择文件</label>
-        <input type="file" id="fileInput" multiple accept="image/*">
+        <div class="file-input-wrapper">
+            <label for="fileInput">选择文件</label>
+            <input type="file" id="fileInput" multiple accept="image/*">
+        </div>
+        <div id="fileCount"></div>
         <input type="text" id="baseNameInput" placeholder="输入基础文件名（可选）">
         <button id="convertButton" onclick="convertImages()">转换</button>
     </div>
@@ -178,6 +213,38 @@
     <script>
         let convertedImages = [];
         let selectedFolder = null;
+
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileCount = document.getElementById('fileCount');
+
+        // 拖拽功能
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            if (files.length > 0) {
+                fileCount.textContent = `已选择 ${files.length} 个文件`;
+            } else {
+                fileCount.textContent = '';
+            }
+        }
 
         function convertImages() {
             const files = document.getElementById('fileInput').files;
