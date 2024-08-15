@@ -6,13 +6,52 @@
     <title>图片批量转换为WebP</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .input-group {
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         input, button {
             margin: 10px 0;
+            padding: 12px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+        }
+        input[type="file"] {
+            width: 0.1px;
+            height: 0.1px;
+            opacity: 0;
+            overflow: hidden;
+            position: absolute;
+            z-index: -1;
+        }
+        label[for="fileInput"], #convertButton {
+            background-color: #3498db;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            text-align: center;
+            width: 200px;
+        }
+        label[for="fileInput"]:hover, #convertButton:hover {
+            background-color: #2980b9;
+        }
+        #baseNameInput {
+            width: 300px;
+            border: 1px solid #bdc3c7;
         }
         #output {
             margin-top: 20px;
@@ -23,6 +62,10 @@
         .image-container {
             width: calc(33% - 10px);
             margin-bottom: 20px;
+            background-color: white;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         .preview-link, .button-container button {
             display: block;
@@ -35,9 +78,13 @@
             box-sizing: border-box;
             border: none;
             cursor: pointer;
+            transition: background-color 0.3s;
         }
         .preview-link {
-            background-color: #4CAF50;
+            background-color: #2ecc71;
+        }
+        .preview-link:hover {
+            background-color: #27ae60;
         }
         .button-container {
             display: flex;
@@ -47,25 +94,39 @@
             width: calc(50% - 2px);
         }
         .download-button {
-            background-color: #FFC107;
+            background-color: #f1c40f;
+        }
+        .download-button:hover {
+            background-color: #f39c12;
         }
         .rename-button {
-            background-color: #9C27B0;
+            background-color: #9b59b6;
+        }
+        .rename-button:hover {
+            background-color: #8e44ad;
         }
         #downloadAllButton, #selectFolderButton {
             display: inline-block;
             margin: 20px 10px;
-            padding: 10px 20px;
+            padding: 12px 24px;
             color: white;
             border: none;
             cursor: pointer;
             font-size: 16px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
         }
         #downloadAllButton {
-            background-color: #4CAF50;
+            background-color: #2ecc71;
+        }
+        #downloadAllButton:hover {
+            background-color: #27ae60;
         }
         #selectFolderButton {
-            background-color: #2196F3;
+            background-color: #3498db;
+        }
+        #selectFolderButton:hover {
+            background-color: #2980b9;
         }
         #preview-modal {
             display: none;
@@ -97,9 +158,12 @@
 </head>
 <body>
     <h1>图片批量转换为WebP</h1>
-    <input type="file" id="fileInput" multiple accept="image/*">
-    <input type="text" id="baseNameInput" placeholder="输入基础文件名（可选）">
-    <button onclick="convertImages()">转换</button>
+    <div class="input-group">
+        <label for="fileInput">选择文件</label>
+        <input type="file" id="fileInput" multiple accept="image/*">
+        <input type="text" id="baseNameInput" placeholder="输入基础文件名（可选）">
+        <button id="convertButton" onclick="convertImages()">转换</button>
+    </div>
     <div>
         <button id="downloadAllButton" style="display: none;" onclick="downloadAll()">下载全部</button>
         <button id="selectFolderButton" style="display: none;" onclick="selectFolder()">选择保存路径</button>
@@ -178,7 +242,7 @@
             downloadButton.textContent = '下载';
             downloadButton.className = 'download-button';
             downloadButton.onclick = function() {
-                downloadImage(url, fileName);
+                downloadImage(url, convertedImages[index].fileName);
             };
 
             const renameButton = document.createElement('button');
