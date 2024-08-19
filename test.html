@@ -165,15 +165,85 @@
             top: 15px;
             cursor: pointer;
         }
+        #dropZone {
+            position: relative;
+            border: 2px dashed #3498db;
+            border-radius: 5px;
+            padding: 25px;
+            text-align: center;
+            color: #3498db;
+            font-size: 18px;
+            margin-bottom: 20px;
+            transition: background-color 0.3s;
+        }
+        #dropZone.dragover {
+            background-color: #e8f4fc;
+        }
+        #clearButton {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        #clearButton:hover {
+            background-color: #c0392b;
+        }
+        #fileCount {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        #urlInputZone {
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #urlInput {
+            width: 100%;
+            height: 60px;
+            margin-bottom: 10px;
+            padding: 5px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            resize: vertical;
+        }
+        #addUrlButton {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #addUrlButton:hover {
+            background-color: #2980b9;
+        }
     </style>
 </head>
 <body>
     <h1>图片批量转换为WebP</h1>
+    <div id="dropZone">
+        拖拽图片文件到这里，或点击下方按钮选择文件，或使用URL添加图片
+        <button id="clearButton" style="display: none;">全部清空</button>
+    </div>
+    <div id="urlInputZone">
+        <textarea id="urlInput" placeholder="在此粘贴图片URL，每行一个"></textarea>
+        <button id="addUrlButton">添加URL</button>
+    </div>
     <div class="input-group">
         <div class="file-input-wrapper">
             <label for="fileInput">选择文件</label>
             <input type="file" id="fileInput" multiple accept="image/*">
         </div>
+        <div id="fileCount"></div>
         <input type="text" id="baseNameInput" placeholder="输入基础文件名（可选）">
         <button id="convertButton" onclick="convertImages()">转换</button>
     </div>
@@ -191,20 +261,102 @@
     <script>
         let convertedImages = [];
         let selectedFolder = null;
+        let selectedFiles = [];
+
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileCount = document.getElementById('fileCount');
+        const clearButton = document.getElementById('clearButton');
+        const urlInput = document.getElementById('urlInput');
+        const addUrlButton = document.getElementById('addUrlButton');
+
+        // 拖拽功能
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const newFiles = Array.from(e.dataTransfer.files);
+            selectedFiles = selectedFiles.concat(newFiles);
+            updateFileList();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const newFiles = Array.from(e.target.files);
+            selectedFiles = selectedFiles.concat(newFiles);
+            updateFileList();
+        });
+
+        clearButton.addEventListener('click', () => {
+            selectedFiles = [];
+            fileInput.value = '';
+            updateFileList();
+        });
+
+        addUrlButton.addEventListener('click', () => {
+            const urls = urlInput.value.split('\n').filter(url => url.trim() !== '');
+            urls.forEach(url => {
+                if (isValidImageUrl(url)) {
+                    addImageFromUrl(url);
+                }
+            });
+            urlInput.value = '';
+        });
+
+        function isValidImageUrl(url) {
+            return url.match(/\.(jpeg|jpg|gif|png)$/) != null;
+        }
+
+        function addImageFromUrl(url) {
+            fetch(url)
+                .then(response => response.blob())
+                .then(blob => {
+                    const fileName = url.split('/').pop();
+                    const file = new File([blob], fileName, { type: blob.type });
+                    selectedFiles.push(file);
+                    updateFileList();
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function updateFileList() {
+            if (selectedFiles.length > 0) {
+                let displayText = '已选择文件：<br>';
+                const displayFiles = selectedFiles.slice(0, 5);
+                displayText += displayFiles.map(file => file.name).join('<br>');
+                if (selectedFiles.length > 5) {
+                    displayText += '<br>...';
+                }
+                dropZone.innerHTML = displayText;
+                fileCount.textContent = `已选择 ${selectedFiles.length} 个文件`;
+                clearButton.style.display = 'block';
+                dropZone.appendChild(clearButton);
+            } else {
+                dropZone.innerHTML = '拖拽图片文件到这里，或点击下方按钮选择文件，或使用URL添加图片';
+                fileCount.textContent = '';
+                clearButton.style.display = 'none';
+            }
+        }
 
         function convertImages() {
-            const fileInput = document.getElementById('fileInput');
             const baseName = document.getElementById('baseNameInput').value;
             const output = document.getElementById('output');
             output.innerHTML = '';
             convertedImages = [];
 
-            if (fileInput.files.length > 100) {
+            if (selectedFiles.length > 100) {
                 alert('最多只能选择100张图片');
                 return;
             }
 
-            Array.from(fileInput.files).forEach((file, i) => {
+            selectedFiles.forEach((file, i) => {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const img = new Image();
@@ -294,46 +446,4 @@
                         await writable.write(blob);
                         await writable.close();
                     } catch (err) {
-                        console.error('保存文件时发生错误', err);
-                    }
-                }
-                alert('所有文件已保存到选定文件夹');
-            } else {
-                convertedImages.forEach(img => {
-                    downloadImage(img.url, img.fileName);
-                });
-            }
-        }
-
-        function previewImage(url) {
-            const modal = document.getElementById('preview-modal');
-            const modalImg = document.getElementById('preview-image');
-            modal.style.display = "block";
-            modalImg.src = url;
-        }
-
-        function downloadImage(url, fileName) {
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        function renameImage(link, index) {
-            const newName = prompt("请输入新的文件名", link.textContent.replace('.webp', ''));
-            if (newName && newName.trim() !== "") {
-                const newFileName = newName.trim() + '.webp';
-                link.textContent = newFileName;
-                convertedImages[index].fileName = newFileName;
-            }
-        }
-
-        // 关闭预览模态框
-        document.querySelector('.close').onclick = function() {
-            document.getElementById('preview-modal').style.display = "none";
-        }
-    </script>
-</body>
-</html>
+                        console.error
