@@ -321,61 +321,63 @@ function convertImages() {
             reader.readAsDataURL(file);
         } else {
             // 处理URL文件
-            const img = new Image();
-            img.crossOrigin = 'anonymous';  // 尝试解决CORS问题
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                const dataURL = canvas.toDataURL('image/webp');
-                processImage(dataURL, file.url.split('/').pop(), i);
-                checkCompletion(++processedCount, allFiles.length);
-            };
-            img.onerror = function() {
-                console.error('Error loading image:', file.url);
-                alert(`无法加载图片: ${file.url}`);
-                checkCompletion(++processedCount, allFiles.length);
-            };
-            img.src = file.url;
+            loadImageFromUrl(file.url, file.name, i, processedCount, allFiles.length);
         }
     });
 }
 
-function processImage(src, originalName, index) {
+function loadImageFromUrl(url, name, index, processedCount, totalCount) {
+    // 首先尝试直接加载
     const img = new Image();
+    img.crossOrigin = 'anonymous';
     img.onload = function() {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-
-        const baseName = document.getElementById('baseNameInput').value;
-        let fileName = baseName 
-            ? `${baseName}${(index + 1).toString().padStart(2, '0')}.webp`
-            : originalName.replace(/\.[^/.]+$/, "") + '.webp';
-        
-        canvas.toBlob(function(blob) {
-            if (blob) {
-                const url = URL.createObjectURL(blob);
-                const container = createImageContainer(url, fileName, convertedImages.length);
-                document.getElementById('output').appendChild(container);
-                convertedImages.push({url: url, fileName: fileName, link: container.querySelector('.preview-link')});
-            } else {
-                console.error('Failed to create blob for:', originalName);
-                alert(`无法转换图片: ${originalName}`);
-            }
-        }, 'image/webp');
+        processImageFromLoaded(img, name, index);
+        checkCompletion(++processedCount, totalCount);
     };
     img.onerror = function() {
-        console.error('Error processing image:', originalName);
-        alert(`处理图片时出错: ${originalName}`);
+        console.log('Direct loading failed, trying proxy...');
+        // 如果直接加载失败，尝试使用代理
+        const proxyUrl = 'https://cors-anywhere.herokuapp.com/' + url;
+        const proxyImg = new Image();
+        proxyImg.crossOrigin = 'anonymous';
+        proxyImg.onload = function() {
+            processImageFromLoaded(proxyImg, name, index);
+            checkCompletion(++processedCount, totalCount);
+        };
+        proxyImg.onerror = function() {
+            console.error('Error loading image:', url);
+            alert(`无法加载图片: ${url}\n请确保URL直接指向图片文件，或尝试使用支持CORS的图片托管服务，如Imgur或Cloudinary。`);
+            checkCompletion(++processedCount, totalCount);
+        };
+        proxyImg.src = proxyUrl;
     };
-    img.src = src;
+    img.src = url;
 }
 
+function processImageFromLoaded(img, originalName, index) {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+
+    const baseName = document.getElementById('baseNameInput').value;
+    let fileName = baseName 
+        ? `${baseName}${(index + 1).toString().padStart(2, '0')}.webp`
+        : originalName.replace(/\.[^/.]+$/, "") + '.webp';
+    
+    canvas.toBlob(function(blob) {
+        if (blob) {
+            const url = URL.createObjectURL(blob);
+            const container = createImageContainer(url, fileName, convertedImages.length);
+            document.getElementById('output').appendChild(container);
+            convertedImages.push({url: url, fileName: fileName, link: container.querySelector('.preview-link')});
+        } else {
+            console.error('Failed to create blob for:', originalName);
+            alert(`无法转换图片: ${originalName}`);
+        }
+    }, 'image/webp');
+}
     function createImageContainer(url, fileName, index) {
         const container = document.createElement('div');
         container.className = 'image-container';
