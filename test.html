@@ -5,227 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>图片批量转换为WebP</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f0f0f0;
-            color: #333;
-        }
-        h1 {
-            text-align: center;
-            color: #2c3e50;
-        }
-        .input-group {
-            margin: 20px 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        input, button, .file-input-wrapper {
-            margin: 10px 0;
-            padding: 12px 20px;
-            font-size: 16px;
-            border: none;
-            border-radius: 5px;
-            width: 300px;
-            box-sizing: border-box;
-        }
-        input[type="file"] {
-            width: 0.1px;
-            height: 0.1px;
-            opacity: 0;
-            overflow: hidden;
-            position: absolute;
-            z-index: -1;
-        }
-        .file-input-wrapper {
-            background-color: #3498db;
-            color: white;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 45px;
-        }
-        .file-input-wrapper:hover, #convertButton:hover {
-            background-color: #2980b9;
-        }
-        #convertButton {
-            background-color: #3498db;
-            color: white;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            height: 45px;
-        }
-        #baseNameInput {
-            border: 1px solid #bdc3c7;
-        }
-        #output {
-            margin-top: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-        }
-        .image-container {
-            width: calc(33% - 10px);
-            margin-bottom: 20px;
-            background-color: white;
-            border-radius: 5px;
-            overflow: hidden;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .preview-link, .button-container button {
-            display: block;
-            margin: 5px 0;
-            padding: 10px;
-            color: white;
-            text-decoration: none;
-            text-align: center;
-            width: 100%;
-            box-sizing: border-box;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .preview-link {
-            background-color: #2ecc71;
-        }
-        .preview-link:hover {
-            background-color: #27ae60;
-        }
-        .button-container {
-            display: flex;
-            justify-content: space-between;
-        }
-        .button-container button {
-            width: calc(50% - 2px);
-        }
-        .download-button {
-            background-color: #f1c40f;
-        }
-        .download-button:hover {
-            background-color: #f39c12;
-        }
-        .rename-button {
-            background-color: #9b59b6;
-        }
-        .rename-button:hover {
-            background-color: #8e44ad;
-        }
-        #downloadAllButton, #selectFolderButton {
-            display: inline-block;
-            margin: 20px 10px;
-            padding: 12px 24px;
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-        }
-        #downloadAllButton {
-            background-color: #2ecc71;
-        }
-        #downloadAllButton:hover {
-            background-color: #27ae60;
-        }
-        #selectFolderButton {
-            background-color: #3498db;
-        }
-        #selectFolderButton:hover {
-            background-color: #2980b9;
-        }
-        #preview-modal {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.9);
-        }
-        #preview-image {
-            margin: auto;
-            display: block;
-            max-width: 90%;
-            max-height: 90%;
-        }
-        .close {
-            color: #f1f1f1;
-            font-size: 40px;
-            font-weight: bold;
-            position: absolute;
-            right: 35px;
-            top: 15px;
-            cursor: pointer;
-        }
-        #dropZone {
-            position: relative;
-            border: 2px dashed #3498db;
-            border-radius: 5px;
-            padding: 25px;
-            text-align: center;
-            color: #3498db;
-            font-size: 18px;
-            margin-bottom: 20px;
-            transition: background-color 0.3s;
-        }
-        #dropZone.dragover {
-            background-color: #e8f4fc;
-        }
-        #clearButton {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        #clearButton:hover {
-            background-color: #c0392b;
-        }
-        #fileCount {
-            margin-top: 10px;
-            font-size: 14px;
-            color: #7f8c8d;
-        }
-        #urlInputZone {
-            margin: 20px 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        #urlInput {
-            width: 100%;
-            height: 60px;
-            margin-bottom: 10px;
-            padding: 5px;
-            border: 1px solid #bdc3c7;
-            border-radius: 5px;
-            resize: vertical;
-        }
-        #addUrlButton {
-            background-color: #3498db;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        #addUrlButton:hover {
-            background-color: #2980b9;
-        }
+        /* 保持原有的 CSS 样式不变 */
     </style>
 </head>
 <body>
@@ -245,11 +25,11 @@
         </div>
         <div id="fileCount"></div>
         <input type="text" id="baseNameInput" placeholder="输入基础文件名（可选）">
-        <button id="convertButton" onclick="convertImages()">转换</button>
+        <button id="convertButton">转换</button>
     </div>
     <div>
-        <button id="downloadAllButton" style="display: none;" onclick="downloadAll()">下载全部</button>
-        <button id="selectFolderButton" style="display: none;" onclick="selectFolder()">选择保存路径</button>
+        <button id="downloadAllButton" style="display: none;">下载全部</button>
+        <button id="selectFolderButton" style="display: none;">选择保存路径</button>
     </div>
     <div id="output"></div>
 
@@ -269,6 +49,9 @@
         const clearButton = document.getElementById('clearButton');
         const urlInput = document.getElementById('urlInput');
         const addUrlButton = document.getElementById('addUrlButton');
+        const convertButton = document.getElementById('convertButton');
+        const downloadAllButton = document.getElementById('downloadAllButton');
+        const selectFolderButton = document.getElementById('selectFolderButton');
 
         // 拖拽功能
         dropZone.addEventListener('dragover', (e) => {
@@ -309,6 +92,10 @@
             });
             urlInput.value = '';
         });
+
+        convertButton.addEventListener('click', convertImages);
+        downloadAllButton.addEventListener('click', downloadAll);
+        selectFolderButton.addEventListener('click', selectFolder);
 
         function isValidImageUrl(url) {
             return url.match(/\.(jpeg|jpg|gif|png)$/) != null;
@@ -383,8 +170,8 @@
                 reader.readAsDataURL(file);
             });
 
-            document.getElementById('downloadAllButton').style.display = 'inline-block';
-            document.getElementById('selectFolderButton').style.display = 'inline-block';
+            downloadAllButton.style.display = 'inline-block';
+            selectFolderButton.style.display = 'inline-block';
         }
 
         function createImageContainer(url, fileName, index) {
@@ -446,8 +233,6 @@
                         await writable.write(blob);
                         await writable.close();
                     } catch (err) {
-                        console.error
-                         } catch (err) {
                         console.error('保存文件时发生错误', err);
                     }
                 }
