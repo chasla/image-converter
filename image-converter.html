@@ -1,266 +1,207 @@
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图片批量转换为WebP</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        input, button {
-            margin: 10px 0;
-        }
-        #output {
-            margin-top: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: flex-start;
-            gap: 10px;
-        }
-        .image-container {
-            width: calc(20% - 10px);
-            margin-bottom: 20px;
-        }
-        .preview-link, .button-container button {
-            display: block;
-            margin: 5px 0;
-            padding: 10px;
-            color: white;
-            text-decoration: none;
-            text-align: center;
-            width: 100%;
-            box-sizing: border-box;
-            border: none;
-            cursor: pointer;
-        }
-        .preview-link {
-            background-color: #4CAF50;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .button-container {
-            display: flex;
-            justify-content: space-between;
-        }
-        .button-container button {
-            width: calc(50% - 2px);
-        }
-        .download-button {
-            background-color: #FFC107;
-        }
-        .rename-button {
-            background-color: #9C27B0;
-        }
-        #downloadAllButton, #selectFolderButton {
-            display: inline-block;
-            margin: 20px 10px;
-            padding: 10px 20px;
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        #downloadAllButton {
-            background-color: #4CAF50;
-        }
-        #selectFolderButton {
-            background-color: #2196F3;
-        }
-        #preview-modal {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.9);
-        }
-        #preview-image {
-            margin: auto;
-            display: block;
-            max-width: 90%;
-            max-height: 90%;
-        }
-        .close {
-            color: #f1f1f1;
-            font-size: 40px;
-            font-weight: bold;
-            position: absolute;
-            right: 35px;
-            top: 15px;
-            cursor: pointer;
-        }
-    </style>
-</head>
-<body>
-    <h1>图片批量转换为WebP</h1>
-    <input type="file" id="fileInput" multiple accept="image/*">
-    <input type="text" id="baseNameInput" placeholder="输入基础文件名（可选）">
-    <button onclick="convertImages()">转换</button>
-    <div>
-        <button id="downloadAllButton" style="display: none;" onclick="downloadAll()">下载全部</button>
-        <button id="selectFolderButton" style="display: none;" onclick="selectFolder()">选择保存路径</button>
-    </div>
-    <div id="output"></div>
+<!DOCTYPE html> <html lang="zh"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>图片批量转换为WebP</title> <style> body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f0f0f0; color: #333; } h1 { text-align: center; color: #2c3e50; } .input-group { margin: 20px 0; display: flex; flex-direction: column; align-items: center; } input, button, .file-input-wrapper { margin: 10px 0; padding: 12px 20px; font-size: 16px; border: none; border-radius: 5px; width: 300px; box-sizing: border-box; } input[type="file"] { width: 0.1px; height: 0.1px; opacity: 0; overflow: hidden; position: absolute; z-index: -1; } .file-input-wrapper { background-color: #3498db; color: white; cursor: pointer; transition: background-color 0.3s; text-align: center; display: flex; align-items: center; justify-content: center; height: 45px; } .file-input-wrapper:hover, #convertButton:hover { background-color: #2980b9; } #convertButton { background-color: #3498db; color: white; cursor: pointer; transition: background-color 0.3s; height: 45px; } #baseNameInput { border: 1px solid #bdc3c7; } #output { margin-top: 20px; display: flex; flex-wrap: wrap; justify-content: space-between; } .image-container { width: calc(33% - 10px); margin-bottom: 20px; background-color: white; border-radius: 5px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); } .preview-link, .button-container button { display: block; margin: 5px 0; padding: 10px; color: white; text-decoration: none; text-align: center; width: 100%; box-sizing: border-box; border: none; cursor: pointer; transition: background-color 0.3s; } .preview-link { background-color: #2ecc71; } .preview-link:hover { background-color: #27ae60; } .button-container { display: flex; justify-content: space-between; } .button-container button { width: calc(50% - 2px); } .download-button { background-color: #f1c40f; } .download-button:hover { background-color: #f39c12; } .rename-button { background-color: #9b59b6; } .rename-button:hover { background-color: #8e44ad; } #downloadAllButton, #selectFolderButton { display: inline-block; margin: 20px 10px; padding: 12px 24px; color: white; border: none; cursor: pointer; font-size: 16px; border-radius: 5px; transition: background-color 0.3s; } #downloadAllButton { background-color: #2ecc71; } #downloadAllButton:hover { background-color: #27ae60; } #selectFolderButton { background-color: #3498db; } #selectFolderButton:hover { background-color: #2980b9; } #preview-modal { display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.9); } #preview-image { margin: auto; display: block; max-width: 90%; max-height: 90%; } .close { color: #f1f1f1; font-size: 40px; font-weight: bold; position: absolute; right: 35px; top: 15px; cursor: pointer; } #dropZone { position: relative; border: 2px dashed #3498db; border-radius: 5px; padding: 25px; text-align: center; color: #3498db; font-size: 18px; margin-bottom: 20px; transition: background-color 0.3s; } #dropZone.dragover { background-color: #e8f4fc; } #clearButton { position: absolute; top: 5px; right: 5px; background-color: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px; } #clearButton:hover { background-color: #c0392b; } #fileCount { margin-top: 10px; font-size: 14px; color: #7f8c8d; } </style> </head> <body> <h1>图片批量转换为WebP</h1> <div id="dropZone"> 拖拽图片文件到这里，或点击下方按钮选择文件 <button id="clearButton" style="display: none;">全部清空</button> </div> <div class="input-group"> <div class="file-input-wrapper"> <label for="fileInput">选择文件</label> <input type="file" id="fileInput" multiple accept="image/*"> </div> <div id="fileCount"></div> <input type="text" id="baseNameInput" placeholder="输入基础文件名（可选）"> <button id="convertButton" onclick="convertImages()">转换</button> </div> <div> <button id="downloadAllButton" style="display: none;" onclick="downloadAll()">下载全部</button> <button id="selectFolderButton" style="display: none;" onclick="selectFolder()">选择保存路径</button> </div> <div id="output"></div>
+<div id="preview-modal">
+    <span class="close">&times;</span>
+    <img id="preview-image">
+</div>
 
-    <div id="preview-modal">
-        <span class="close">&times;</span>
-        <img id="preview-image">
-    </div>
+<script>
+    let convertedImages = [];
+    let selectedFolder = null;
+    let selectedFiles = [];
 
-    <script>
-        let convertedImages = [];
-        let selectedFolder = null;
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const fileCount = document.getElementById('fileCount');
+    const clearButton = document.getElementById('clearButton');
 
-        function convertImages() {
-            const files = document.getElementById('fileInput').files;
-            const baseName = document.getElementById('baseNameInput').value;
-            const output = document.getElementById('output');
-            output.innerHTML = '';
-            convertedImages = [];
+    // 拖拽功能
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
 
-            if (files.length > 100) {
-                alert('最多只能选择100张图片');
-                return;
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        const newFiles = Array.from(e.dataTransfer.files);
+        selectedFiles = selectedFiles.concat(newFiles);
+        updateFileList();
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        const newFiles = Array.from(e.target.files);
+        selectedFiles = selectedFiles.concat(newFiles);
+        updateFileList();
+    });
+
+    clearButton.addEventListener('click', () => {
+        selectedFiles = [];
+        fileInput.value = '';
+        updateFileList();
+    });
+
+    function updateFileList() {
+        if (selectedFiles.length > 0) {
+            let displayText = '已选择文件：<br>';
+            const displayFiles = selectedFiles.slice(0, 5);
+            displayText += displayFiles.map(file => file.name).join('<br>');
+            if (selectedFiles.length > 5) {
+                displayText += '<br>...';
             }
+            dropZone.innerHTML = displayText;
+            fileCount.textContent = `已选择 ${selectedFiles.length} 个文件`;
+            clearButton.style.display = 'block';
+            dropZone.appendChild(clearButton);
+        } else {
+            dropZone.innerHTML = '拖拽图片文件到这里，或点击下方按钮选择文件';
+            fileCount.textContent = '';
+            clearButton.style.display = 'none';
+        }
+    }
 
-            Array.from(files).forEach((file, i) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.onload = function() {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0);
+    function convertImages() {
+        const baseName = document.getElementById('baseNameInput').value;
+        const output = document.getElementById('output');
+        output.innerHTML = '';
+        convertedImages = [];
 
-                        let fileName = baseName 
-                            ? `${baseName}${(i + 1).toString().padStart(3, '0')}.webp`
-                            : file.name.replace(/\.[^/.]+$/, "") + '.webp';
-                        
-                        canvas.toBlob(function(blob) {
-                            const url = URL.createObjectURL(blob);
-                            const container = createImageContainer(url, fileName, i);
-                            output.appendChild(container);
-                            convertedImages.push({url: url, fileName: fileName, link: container.querySelector('.preview-link')});
-                        }, 'image/webp');
-                    };
-                    img.src = e.target.result;
+        if (selectedFiles.length > 100) {
+            alert('最多只能选择100张图片');
+            return;
+        }
+
+        selectedFiles.forEach((file, i) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+
+                    let fileName = baseName 
+                        ? `${baseName}${(i + 1).toString().padStart(2, '0')}.webp`
+                        : file.name.replace(/\.[^/.]+$/, "") + '.webp';
+                    
+                    canvas.toBlob(function(blob) {
+                        const url = URL.createObjectURL(blob);
+                        const container = createImageContainer(url, fileName, i);
+                        output.appendChild(container);
+                        convertedImages.push({url: url, fileName: fileName, link: container.querySelector('.preview-link')});
+                    }, 'image/webp');
                 };
-                reader.readAsDataURL(file);
-            });
-
-            document.getElementById('downloadAllButton').style.display = 'inline-block';
-            document.getElementById('selectFolderButton').style.display = 'inline-block';
-        }
-
-        function createImageContainer(url, fileName, index) {
-            const container = document.createElement('div');
-            container.className = 'image-container';
-
-            const link = document.createElement('a');
-            link.href = '#';
-            link.textContent = fileName;
-            link.className = 'preview-link';
-            link.onclick = function(e) {
-                e.preventDefault();
-                previewImage(url);
+                img.src = e.target.result;
             };
+            reader.readAsDataURL(file);
+        });
 
-            const buttonContainer = document.createElement('div');
-            buttonContainer.className = 'button-container';
+        document.getElementById('downloadAllButton').style.display = 'inline-block';
+        document.getElementById('selectFolderButton').style.display = 'inline-block';
+    }
 
-            const downloadButton = document.createElement('button');
-            downloadButton.textContent = '下载';
-            downloadButton.className = 'download-button';
-            downloadButton.onclick = function() {
-                downloadImage(url, fileName);
-            };
+    function createImageContainer(url, fileName, index) {
+        const container = document.createElement('div');
+        container.className = 'image-container';
 
-            const renameButton = document.createElement('button');
-            renameButton.textContent = '重命名';
-            renameButton.className = 'rename-button';
-            renameButton.onclick = function() {
-                renameImage(link, index);
-            };
+        const link = document.createElement('a');
+        link.href = '#';
+        link.textContent = fileName;
+        link.className = 'preview-link';
+        link.onclick = function(e) {
+            e.preventDefault();
+            previewImage(url);
+        };
 
-            buttonContainer.appendChild(downloadButton);
-            buttonContainer.appendChild(renameButton);
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'button-container';
 
-            container.appendChild(link);
-            container.appendChild(buttonContainer);
+        const downloadButton = document.createElement('button');
+        downloadButton.textContent = '下载';
+        downloadButton.className = 'download-button';
+        downloadButton.onclick = function() {
+            downloadImage(url, convertedImages[index].fileName);
+        };
 
-            return container;
+        const renameButton = document.createElement('button');
+        renameButton.textContent = '重命名';
+        renameButton.className = 'rename-button';
+        renameButton.onclick = function() {
+            renameImage(link, index);
+        };
+
+        buttonContainer.appendChild(downloadButton);
+        buttonContainer.appendChild(renameButton);
+
+        container.appendChild(link);
+        container.appendChild(buttonContainer);
+
+        return container;
+    }
+
+    async function selectFolder() {
+        try {
+            selectedFolder = await window.showDirectoryPicker();
+            alert('文件夹选择成功！');
+        } catch (err) {
+            console.error('文件夹选择被取消或发生错误', err);
         }
+    }
 
-        async function selectFolder() {
-            try {
-                selectedFolder = await window.showDirectoryPicker();
-                alert('文件夹选择成功！');
-            } catch (err) {
-                console.error('文件夹选择被取消或发生错误', err);
-            }
-        }
-
-        async function downloadAll() {
-            if (selectedFolder) {
-                for (let img of convertedImages) {
-                    try {
-                        const response = await fetch(img.url);
-                        const blob = await response.blob();
-                        const fileHandle = await selectedFolder.getFileHandle(img.fileName, { create: true });
-                        const writable = await fileHandle.createWritable();
-                        await writable.write(blob);
-                        await writable.close();
-                    } catch (err) {
-                        console.error('保存文件时发生错误', err);
-                    }
+    async function downloadAll() {
+        if (selectedFolder) {
+            for (let img of convertedImages) {
+                try {
+                    const response = await fetch(img.url);
+                    const blob = await response.blob();
+                    const fileHandle = await selectedFolder.getFileHandle(img.fileName, { create: true });
+                    const writable = await fileHandle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                } catch (err) {
+                    console.error('保存文件时发生错误', err);
                 }
-                alert('所有文件已保存到选定文件夹');
-            } else {
-                convertedImages.forEach(img => {
-                    downloadImage(img.url, img.fileName);
-                });
             }
+            alert('所有文件已保存到选定文件夹');
+        } else {
+            convertedImages.forEach(img => {
+                downloadImage(img.url, img.fileName);
+            });
         }
+    }
 
-        function previewImage(url) {
-            const modal = document.getElementById('preview-modal');
-            const modalImg = document.getElementById('preview-image');
-            modal.style.display = "block";
-            modalImg.src = url;
-        }
+    function previewImage(url) {
+        const modal = document.getElementById('preview-modal');
+        const modalImg = document.getElementById('preview-image');
+        modal.style.display = "block";
+        modalImg.src = url;
+    }
 
-        function downloadImage(url, fileName) {
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
+    function downloadImage(url, fileName) {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 
-        function renameImage(link, index) {
-            const newName = prompt("请输入新的文件名", link.textContent.replace('.webp', ''));
-            if (newName && newName.trim() !== "") {
-                const newFileName = newName.trim() + '.webp';
-                link.textContent = newFileName;
-                convertedImages[index].fileName = newFileName;
-            }
+    function renameImage(link, index) {
+        const newName = prompt("请输入新的文件名", link.textContent.replace('.webp', ''));
+        if (newName && newName.trim() !== "") {
+            const newFileName = newName.trim() + '.webp';
+            link.textContent = newFileName;
+            convertedImages[index].fileName = newFileName;
         }
+    }
 
-        // 关闭预览模态框
-        document.querySelector('.close').onclick = function() {
-            document.getElementById('preview-modal').style.display = "none";
-        }
-    </script>
-</body>
-</html>
+    // 关闭预览模态框
+    document.querySelector('.close').onclick = function() {
+        document.getElementById('preview-modal').style.display = "none";
+    }
+</script>
