@@ -447,3 +447,47 @@
                         await writable.close();
                     } catch (err) {
                         console.error
+                         } catch (err) {
+                        console.error('保存文件时发生错误', err);
+                    }
+                }
+                alert('所有文件已保存到选定文件夹');
+            } else {
+                convertedImages.forEach(img => {
+                    downloadImage(img.url, img.fileName);
+                });
+            }
+        }
+
+        function previewImage(url) {
+            const modal = document.getElementById('preview-modal');
+            const modalImg = document.getElementById('preview-image');
+            modal.style.display = "block";
+            modalImg.src = url;
+        }
+
+        function downloadImage(url, fileName) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function renameImage(link, index) {
+            const newName = prompt("请输入新的文件名", link.textContent.replace('.webp', ''));
+            if (newName && newName.trim() !== "") {
+                const newFileName = newName.trim() + '.webp';
+                link.textContent = newFileName;
+                convertedImages[index].fileName = newFileName;
+            }
+        }
+
+        // 关闭预览模态框
+        document.querySelector('.close').onclick = function() {
+            document.getElementById('preview-modal').style.display = "none";
+        }
+    </script>
+</body>
+</html>
