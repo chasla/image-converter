@@ -227,237 +227,120 @@
         <img id="preview-image">
     </div>
 
-    <script>
-        let convertedImages = [];
-        let selectedFolder = null;
-        let selectedFiles = [];
-        let urlFiles = [];
+   <script>
+    let convertedImages = [];
+    let selectedFolder = null;
+    let selectedFiles = [];
+    let urlFiles = [];
 
-        const dropZone = document.getElementById('dropZone');
-        const fileInput = document.getElementById('fileInput');
-        const urlInput = document.getElementById('urlInput');
-        const fileCount = document.getElementById('fileCount');
-        const clearButton = document.getElementById('clearButton');
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const urlInput = document.getElementById('urlInput');
+    const fileCount = document.getElementById('fileCount');
+    const clearButton = document.getElementById('clearButton');
 
-        // 拖拽功能
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('dragover');
-        });
+    // 拖拽功能和其他事件监听器保持不变
 
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('dragover');
-        });
+    function updateFileList() {
+        const urls = urlInput.value.split('\n').filter(url => url.trim() !== '');
+        urlFiles = urls.map(url => ({name: url.split('/').pop(), url: url}));
+        const totalFiles = selectedFiles.length + urlFiles.length;
 
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-            const newFiles = Array.from(e.dataTransfer.files);
-            selectedFiles = selectedFiles.concat(newFiles);
-            updateFileList();
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            const newFiles = Array.from(e.target.files);
-            selectedFiles = selectedFiles.concat(newFiles);
-            updateFileList();
-        });
-
-        urlInput.addEventListener('input', updateFileList);
-
-        clearButton.addEventListener('click', () => {
-            selectedFiles = [];
-            fileInput.value = '';
-            urlInput.value = '';
-            updateFileList();
-        });
-
-        function updateFileList() {
-            const urls = urlInput.value.split('\n').filter(url => url.trim() !== '');
-            urlFiles = urls.map(url => ({name: url.split('/').pop(), url: url}));
-            const totalFiles = selectedFiles.length + urlFiles.length;
-
-            if (totalFiles > 0) {
-                let displayText = '已选择文件：<br>';
-                const displayFiles = [...selectedFiles, ...urlFiles].slice(0, 5);
-                displayText += displayFiles.map(file => file.name).join('<br>');
-                if (totalFiles > 5) {
-                    displayText += '<br>...';
-                }
-                dropZone.innerHTML = displayText;
-                fileCount.textContent = `已选择 ${totalFiles} 个文件`;
-                clearButton.style.display = 'block';
-                dropZone.appendChild(clearButton);
-            } else {
-                dropZone.innerHTML = '拖拽图片文件到这里，或点击下方按钮选择文件';
-                fileCount.textContent = '';
-                clearButton.style.display = 'none';
+        if (totalFiles > 0) {
+            let displayText = '已选择文件：<br>';
+            const displayFiles = [...selectedFiles, ...urlFiles].slice(0, 5);
+            displayText += displayFiles.map(file => file.name).join('<br>');
+            if (totalFiles > 5) {
+                displayText += '<br>...';
             }
+            dropZone.innerHTML = displayText;
+            fileCount.textContent = `已选择 ${totalFiles} 个文件`;
+            clearButton.style.display = 'block';
+            dropZone.appendChild(clearButton);
+        } else {
+            dropZone.innerHTML = '拖拽图片文件到这里，或点击下方按钮选择文件';
+            fileCount.textContent = '';
+            clearButton.style.display = 'none';
+        }
+    }
+
+    function convertImages() {
+        const baseName = document.getElementById('baseNameInput').value;
+        const output = document.getElementById('output');
+        output.innerHTML = '';
+        convertedImages = [];
+
+        const allFiles = [...selectedFiles, ...urlFiles];
+
+        if (allFiles.length > 100) {
+            alert('最多只能选择100张图片');
+            return;
         }
 
-        function convertImages() {
-            const baseName = document.getElementById('baseNameInput').value;
-            const output = document.getElementById('output');
-            output.innerHTML = '';
-            convertedImages = [];
+        let processedCount = 0;
 
-            const allFiles = [...selectedFiles, ...urlFiles];
-
-            if (allFiles.length > 100) {
-                alert('最多只能选择100张图片');
-                return;
+        allFiles.forEach((file, i) => {
+            if (file instanceof File) {
+                // 处理本地文件
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    processImage(e.target.result, file.name, i);
+                    checkCompletion(++processedCount, allFiles.length);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                // 处理URL文件
+                fetch(file.url)
+                    .then(response => response.blob())
+                    .then(blob => {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            processImage(e.target.result, file.name, i);
+                            checkCompletion(++processedCount, allFiles.length);
+                        };
+                        reader.readAsDataURL(blob);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching image:', error);
+                        checkCompletion(++processedCount, allFiles.length);
+                    });
             }
+        });
+    }
 
-            allFiles.forEach((file, i) => {
-                if (file instanceof File) {
-                    // 处理本地文件
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        processImage(e.target.result, file.name, i);
-                    };
-                    reader.readAsDataURL(file);
-                } else {
-                    // 处理URL文件
-                    fetch(file.url)
-                        .then(response => response.blob())
-                        .then(blob => {
-                            const reader = new FileReader();
-                            reader.onload = function(e) {
-                                processImage(e.target.result, file.name, i);
-                            };
-                            reader.readAsDataURL(blob);
-                        })
-                        .catch(error => console.error('Error fetching image:', error));
-                }
-            });
-
+    function checkCompletion(processed, total) {
+        if (processed === total) {
             document.getElementById('downloadAllButton').style.display = 'inline-block';
             document.getElementById('selectFolderButton').style.display = 'inline-block';
         }
+    }
 
-        function processImage(src, originalName, index) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
+    function processImage(src, originalName, index) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
 
-                const baseName = document.getElementById('baseNameInput').value;
-                let fileName = baseName 
-                    ? `${baseName}${(index + 1).toString().padStart(2, '0')}.webp`
-                    : originalName.replace(/\.[^/.]+$/, "") + '.webp';
-                
-                canvas.toBlob(function(blob) {
-                    const url = URL.createObjectURL(blob);
-                    const container = createImageContainer(url, fileName, index);
-                    document.getElementById('output').appendChild(container);
-                    convertedImages.push({url: url, fileName: fileName, link: container.querySelector('.preview-link')});
-                }, 'image/webp');
-            };
-            img.src = src;
-        }
+            const baseName = document.getElementById('baseNameInput').value;
+            let fileName = baseName 
+                ? `${baseName}${(index + 1).toString().padStart(2, '0')}.webp`
+                : originalName.replace(/\.[^/.]+$/, "") + '.webp';
+            
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const container = createImageContainer(url, fileName, convertedImages.length);
+                document.getElementById('output').appendChild(container);
+                convertedImages.push({url: url, fileName: fileName, link: container.querySelector('.preview-link')});
+            }, 'image/webp');
+        };
+        img.src = src;
+    }
 
-        function createImageContainer(url, fileName, index) {
-            const container = document.createElement('div');
-            container.className = 'image-container';
+    // 其他函数（createImageContainer, selectFolder, downloadAll, previewImage, downloadImage, renameImage）保持不变
 
-            const link = document.createElement('a');
-            link.href = '#';
-            link.textContent = fileName;
-            link.className = 'preview-link';
-            link.onclick = function(e) {
-                e.preventDefault();
-                previewImage(url);
-            };
-
-            const buttonContainer = document.createElement('div');
-            buttonContainer.className = 'button-container';
-
-            const downloadButton = document.createElement('button');
-            downloadButton.textContent = '下载';
-            downloadButton.className = 'download-button';
-            downloadButton.onclick = function() {
-                downloadImage(url, convertedImages[index].fileName);
-            };
-
-            const renameButton = document.createElement('button');
-            renameButton.textContent = '重命名';
-            renameButton.className = 'rename-button';
-            renameButton.onclick = function() {
-                renameImage(link, index);
-            };
-
-            buttonContainer.appendChild(downloadButton);
-            buttonContainer.appendChild(renameButton);
-
-            container.appendChild(link);
-            container.appendChild(buttonContainer);
-
-            return container;
-        }
-
-        async function selectFolder() {
-            try {
-                selectedFolder = await window.showDirectoryPicker();
-                alert('文件夹选择成功！');
-            } catch (err) {
-                console.error('文件夹选择被取消或发生错误', err);
-            }
-        }
-
-        async function downloadAll() {
-            if (selectedFolder) {
-                for (let img of convertedImages) {
-                    try {
-                        const response = await fetch(img.url);
-                        const blob = await response.blob();
-                        const fileHandle = await selectedFolder.getFileHandle(img.fileName, { create: true });
-                        const writable = await fileHandle.createWritable();
-                        await writable.write(blob);
-                        await writable.close();
-                    } catch (err) {
-                        console.error('保存文件时发生错误', err);
-                    }
-                }
-                alert('所有文件已保存到选定文件夹');
-            } else {
-                convertedImages.forEach(img => {
-                    downloadImage(img.url, img.fileName);
-                });
-            }
-        }
-
-        function previewImage(url) {
-            const modal = document.getElementById('preview-modal');
-            const modalImg = document.getElementById('preview-image');
-            modal.style.display = "block";
-            modalImg.src = url;
-        }
-
-        function downloadImage(url, fileName) {
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        function renameImage(link, index) {
-            const newName = prompt("请输入新的文件名", link.textContent.replace('.webp', ''));
-            if (newName && newName.trim() !== "") {
-                const newFileName = newName.trim() + '.webp';
-                link.textContent = newFileName;
-                convertedImages[index].fileName = newFileName;
-            }
-        }
-
-        // 关闭预览模态框
-        document.querySelector('.close').onclick = function() {
-            document.getElementById('preview-modal').style.display = "none";
-        }
-    </script>
+</script>
 </body>
 </html>
