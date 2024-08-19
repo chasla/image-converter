@@ -199,12 +199,22 @@
             font-size: 14px;
             color: #7f8c8d;
         }
+        #urlInput {
+            width: 100%;
+            height: 60px;
+            margin-top: 10px;
+            padding: 5px;
+            border: 1px solid #bdc3c7;
+            border-radius: 3px;
+            resize: vertical;
+        }
     </style>
 </head>
 <body>
     <h1>图片批量转换为WebP</h1>
     <div id="dropZone">
-        拖拽图片文件到这里，或点击下方按钮选择文件
+        拖拽图片文件到这里，或点击下方按钮选择文件，或粘贴图片URL
+        <textarea id="urlInput" placeholder="在此粘贴图片URL，每行一个"></textarea>
         <button id="clearButton" style="display: none;">全部清空</button>
     </div>
     <div class="input-group">
@@ -236,6 +246,7 @@
         const fileInput = document.getElementById('fileInput');
         const fileCount = document.getElementById('fileCount');
         const clearButton = document.getElementById('clearButton');
+        const urlInput = document.getElementById('urlInput');
 
         // 拖拽功能
         dropZone.addEventListener('dragover', (e) => {
@@ -264,8 +275,34 @@
         clearButton.addEventListener('click', () => {
             selectedFiles = [];
             fileInput.value = '';
+            urlInput.value = '';
             updateFileList();
         });
+
+        urlInput.addEventListener('input', () => {
+            const urls = urlInput.value.split('\n').filter(url => url.trim() !== '');
+            urls.forEach(url => {
+                if (isValidImageUrl(url)) {
+                    addImageFromUrl(url);
+                }
+            });
+            urlInput.value = '';
+        });
+
+        function isValidImageUrl(url) {
+            return url.match(/\.(jpeg|jpg|gif|png)$/) != null;
+        }
+
+        function addImageFromUrl(url) {
+            fetch(url)
+                .then(response => response.blob())
+                .then(blob => {
+                    const file = new File([blob], "image_from_url." + url.split('.').pop(), { type: blob.type });
+                    selectedFiles.push(file);
+                    updateFileList();
+                })
+                .catch(error => console.error('Error:', error));
+        }
 
         function updateFileList() {
             if (selectedFiles.length > 0) {
@@ -276,11 +313,13 @@
                     displayText += '<br>...';
                 }
                 dropZone.innerHTML = displayText;
+                dropZone.appendChild(urlInput);
                 fileCount.textContent = `已选择 ${selectedFiles.length} 个文件`;
                 clearButton.style.display = 'block';
                 dropZone.appendChild(clearButton);
             } else {
-                dropZone.innerHTML = '拖拽图片文件到这里，或点击下方按钮选择文件';
+                dropZone.innerHTML = '拖拽图片文件到这里，或点击下方按钮选择文件，或粘贴图片URL';
+                dropZone.appendChild(urlInput);
                 fileCount.textContent = '';
                 clearButton.style.display = 'none';
             }
@@ -406,27 +445,4 @@
         }
 
         function downloadImage(url, fileName) {
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        function renameImage(link, index) {
-            const newName = prompt("请输入新的文件名", link.textContent.replace('.webp', ''));
-            if (newName && newName.trim() !== "") {
-                const newFileName = newName.trim() + '.webp';
-                link.textContent = newFileName;
-                convertedImages[index].fileName = newFileName;
-            }
-        }
-
-        // 关闭预览模态框
-        document.querySelector('.close').onclick = function() {
-            document.getElementById('preview-modal').style.display = "none";
-        }
-    </script>
-</body>
-</html>
+            const
